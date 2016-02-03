@@ -207,7 +207,11 @@ class AwsS3Adapter extends AbstractAdapter
     {
         $location = $this->applyPathPrefix($path);
 
-        return $this->s3Client->doesObjectExist($this->bucket, $location);
+        if ($this->s3Client->doesObjectExist($this->bucket, $location)) {
+            return true;
+        }
+
+        return $this->s3Client->doesObjectExist($this->bucket, $location . '/');
     }
 
     /**
@@ -293,7 +297,13 @@ class AwsS3Adapter extends AbstractAdapter
             $response = $exception->getResponse();
 
             if ($response !== null && $response->getStatusCode() === 404) {
-                return false;
+
+                return [
+                    'type' => 'dir',
+                    'path' => $path,
+                    'timestamp' => time(),
+                    'visibility' => AdapterInterface::VISIBILITY_PUBLIC,
+                ];
             }
 
             throw $exception;
